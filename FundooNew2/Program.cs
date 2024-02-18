@@ -60,6 +60,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) // be
     }); // raja
 
 
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(1);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.None; // or SameSiteMode.Lax or SameSiteMode.Strict
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -96,24 +105,6 @@ builder.Services.AddSwaggerGen(option =>
 });
 });
 
-/*builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue<double>("IdleTimeoutMinutes"));
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
-
-builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-    .AddNegotiate()
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
-options =>
-{
-    options.LoginPath = new PathString("/api/User/Login");
-    options.AccessDeniedPath = new PathString("/api/User/");
-    options.SlidingExpiration = true;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(builder.Configuration.GetValue<double>("IdleTimeoutMinutes"));
-});
-builder.Services.AddDistributedMemoryCache();   */
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -143,7 +134,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication(); // raja
 app.UseAuthorization();
-//app.UseSession();// raja2
+app.UseSession();// raja2
 
 
 app.MapControllers();

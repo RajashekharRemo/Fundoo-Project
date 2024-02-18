@@ -45,9 +45,9 @@ namespace FundooNew2.Controllers
 
         //[Authorize]
         [HttpGet("FirstName")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetUser(string FirstName)
         {
             if (string.IsNullOrEmpty(FirstName))
@@ -61,9 +61,11 @@ namespace FundooNew2.Controllers
                 _logger.LogError("User Not Found With given Name");
                 return NotFound();
             }
+            int Id = Convert.ToInt32(HttpContext.Session.GetInt32("UserId"));
+            string email=HttpContext.Session.GetString("UserEmail");
             return Ok(user);
         }
-
+        //C:\Users\rajas\source\repos\FundooNew2\FundooNew2\FundooNew2.csproj
         [HttpPost]
         [Route("Create")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -78,9 +80,9 @@ namespace FundooNew2.Controllers
         }
 
         [HttpPut()]
-        //[ProducesResponseType(StatusCodes.Status204NoContent)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Put(string PEmail, UserUpdateModel model)
         {
             _logger.LogInformation(tokenEmailClass.Email);
@@ -123,10 +125,10 @@ namespace FundooNew2.Controllers
 
         [HttpPut]
         [Route("ResetPassword")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult resetPasswordAction(ResetPassword resetPassword)
         {
 
@@ -140,8 +142,8 @@ namespace FundooNew2.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("Login")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Login(UserLoginModel model)
         {
 
@@ -150,40 +152,11 @@ namespace FundooNew2.Controllers
             tokenEmailClass = login.LoginMethod(model);
             if (tokenEmailClass == null)
             {
-                //return RedirectToAction("Create", "api/User/");
                 return NotFound();
             }
-            //modelForUpdateAfterLogin=business.GetUserByEmail(model.Email);
 
-
-            //HttpContext.Session.SetString("SessionUser", Newtonsoft.Json.JsonConvert.SerializeObject(model));
-
-
-
-            /*var claims = new List<Claim>
-            {
-
-                new Claim(ClaimTypes.Email, model.Email),
-                //new Claim(ClaimTypes.Role, "Admin")
-            };
-
-            // Create a ClaimsIdentity object
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            // Create a ClaimsPrincipal object
-            var userPrincipal = new ClaimsPrincipal(identity);
-
-            // Create an AuthenticationProperties object
-            var authProperties = new AuthenticationProperties
-            {
-                ExpiresUtc = DateTime.UtcNow.AddMinutes(1),
-                IsPersistent = true,
-                AllowRefresh = true
-            };
-
-            HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            userPrincipal,authProperties);*/
+            HttpContext.Session.SetInt32("UserId", tokenEmailClass.Id);
+            HttpContext.Session.SetString("UserEmail", tokenEmailClass.Email);
 
             responce = Ok(new { token = tokenEmailClass.Token });
 
