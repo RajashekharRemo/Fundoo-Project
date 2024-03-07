@@ -42,6 +42,8 @@ namespace RepositoryLayer.Services.PasswordFolder
                 TokenEmailClass model = new TokenEmailClass();
                 model.Email = user.Email;
                 model.Id = user.Id;
+                model.First_name = user.First_Name;
+                model.Last_Name = user.Last_Name;
                 model.Token = _loginRepository.GenerateToken(user.Id, user);
 
                 return model;

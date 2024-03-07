@@ -18,18 +18,15 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
+using Newtonsoft.Json.Serialization;
 
 
 var builder = WebApplication.CreateBuilder(args);  // this line provide logger to our program
 
-// Add services to the container.
 
 
-/*builder.Logging.ClearProviders();
-builder.Logging.AddDebug();*/
- 
-
-builder.Services.AddMassTransit(x => {
+builder.Services.AddMassTransit(x =>
+{
     x.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config =>
     {
         config.UseHealthCheck(provider);
@@ -37,7 +34,7 @@ builder.Services.AddMassTransit(x => {
         {
             h.Username("guest");
             h.Password("guest");
-        }); 
+        });
     }));
 });
 
@@ -64,10 +61,11 @@ builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(1);
     options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.None; // or SameSiteMode.Lax or SameSiteMode.Strict
+    options.Cookie.IsEssential = true;// or SameSiteMode.Lax or SameSiteMode.Strict
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
+
+builder.Services.AddDistributedMemoryCache();
 
 
 builder.Services.AddControllers();
@@ -88,7 +86,9 @@ builder.Services.AddSwaggerGen(option =>
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "Bearer"
-    }); 
+    });
+
+
     option.AddSecurityRequirement(new OpenApiSecurityRequirement
 {
     {
@@ -105,6 +105,10 @@ builder.Services.AddSwaggerGen(option =>
 });
 });
 
+//builder.Services.AddControllers().AddNewtonsoftJson(options =>
+//    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
+//    op => op.SerializerSettings.ContractResolver = new DefaultContractResolver()
+// );
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -113,7 +117,7 @@ builder.Services.AddScoped<IUserLoginBusiness, UserLoginBusiness>();
 builder.Services.AddScoped<IUserLoginRepository, UserLoginRepository>();
 builder.Services.AddScoped<IPasswordBusiness, PasswordBusiness>();
 builder.Services.AddScoped<IPasswordRepo, PasswordRepo>();
-builder.Services.AddScoped<INotesBusiness,NotesBusiness >();
+builder.Services.AddScoped<INotesBusiness, NotesBusiness>();
 builder.Services.AddScoped<INotesRepository, NotesRepository>();
 
 builder.Services.AddDbContext<UserContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer"))); // this is there before
@@ -121,7 +125,21 @@ builder.Services.AddDbContext<NotesContext>(x => x.UseSqlServer(builder.Configur
 
 
 
+builder.Services.AddCors((setup) =>
+{
+    setup.AddPolicy("default", (op) =>
+    {
+        op.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
+    });
+});
+
+
+
+
+
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -129,6 +147,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("default");
 
 app.UseHttpsRedirection();
 

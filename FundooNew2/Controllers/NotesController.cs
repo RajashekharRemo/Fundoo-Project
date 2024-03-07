@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Model.NotesModel;
+using RepositoryLayer;
 using RepositoryLayer.Entity;
 
 namespace FundooNew2.Controllers
@@ -13,9 +14,11 @@ namespace FundooNew2.Controllers
     public class NotesController : ControllerBase
     {
         private readonly INotesBusiness _notes;
-        public NotesController(INotesBusiness notes)
+        private readonly NotesContext _notesContext;
+        public NotesController(INotesBusiness notes, NotesContext notesContext)
         {
             _notes = notes;
+            _notesContext= notesContext;
         }
 
 
@@ -23,13 +26,33 @@ namespace FundooNew2.Controllers
         [Route("GetAllNotes")]
         public IActionResult GetAll()
         {
-            IEnumerable<NotesModelClass> notesModelClasses=_notes.GetAll();
-            if(notesModelClasses != null)
-            {
-                return Ok(notesModelClasses);
-            }
-            return BadRequest();
+            
+                return Ok(_notesContext.Notes.ToList());
+            
         }
+
+        [HttpGet]
+        [Route("GetAllNotesById")]
+        public IActionResult GetAllById(int Id)
+        {
+
+            if (Id <= 0) { BadRequest(); }
+            else
+            {
+                var notes = _notesContext.Notes.Where(x=> x.UserId == Id);
+                if (notes == null)
+                {
+                    return BadRequest();
+                }
+                else
+                {
+                    return Ok(notes);
+                }
+            }
+            return Ok();
+
+        }
+
 
         /*[Authorize]
         [HttpPost("Create")]
@@ -45,17 +68,31 @@ namespace FundooNew2.Controllers
 
         [Authorize]
         [HttpPost("Create")]
-        public IActionResult Post([FromForm]NotesModelClass notesModel)
+        public IActionResult Post(NotesModelClass notesModel)//[FromForm]
         {
 
-            int UserId = int.Parse(User.Claims.Where(x => x.Type == "Id").FirstOrDefault().Value);
+            int UserId = int.Parse(User.Claims.Where(y => y.Type == "UserId").First().Value);
 
             if (notesModel == null) { return BadRequest(); }
+            //bool flag = _notes.Create(notesModel, UserId);
             bool flag = _notes.Create(notesModel, UserId);
             if (!flag) { return NoContent(); }
             return Ok(notesModel);
             
         }
+
+        [HttpPost("CreateNote")]
+        public IActionResult Post(AngularSupportsNotes asn)
+        {
+            if (asn == null) { return BadRequest("null"); }
+            
+             bool flag=_notes.CreateAngularNotes(asn);
+            if(!flag) { return NoContent(); }
+            return Ok(asn);
+            
+        }
+
+       // C:\Users\rajas\source\repos\FundooNew2\FundooNew2\FundooNew2.csproj
 
         [HttpPut("Update")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -83,6 +120,15 @@ namespace FundooNew2.Controllers
             bool flag=_notes.remove(Title);
             if (!flag) { return NotFound(); }
             return Ok();
+        }
+
+        [HttpDelete("DeleteById")]
+        public IActionResult deleteById(int Id)
+        {
+            if (Id<=0) { return BadRequest(); }
+            bool flag = _notes.deleteById(Id);
+            if (!flag) { return NotFound("Not Found"); }
+            return Ok(new {message="Deleted successfully", result=true});
         }
 
 
@@ -162,6 +208,24 @@ namespace FundooNew2.Controllers
 
             var userid = int.Parse(User.Claims.Where(x => x.Type == "UserId").FirstOrDefault().Value);
             var result = _notes.ToggleArchive(userid, noteId);
+            if (result != null)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+
+        }
+
+        [Authorize]
+        [HttpPut("ToggleTrash")]
+        public IActionResult ToggleTrash(int noteId)
+        {
+
+            var userid = int.Parse(User.Claims.Where(x => x.Type == "UserId").FirstOrDefault().Value);
+            var result = _notes.ToggleTrash(userid, noteId);
             if (result != null)
             {
                 return Ok();

@@ -36,11 +36,11 @@ namespace FundooNew2.Controllers
 
 
 
-        [HttpGet]
-        public IEnumerable<UserModel> GetAll()
+        [HttpGet("GetAll")]
+        public IActionResult GetAll()
         {
             _logger.LogInformation("Get All method started");
-            return business.GetAll();
+            return Ok(business.GetAll());
         }
 
         //[Authorize]
@@ -61,8 +61,8 @@ namespace FundooNew2.Controllers
                 _logger.LogError("User Not Found With given Name");
                 return NotFound();
             }
-            int Id = Convert.ToInt32(HttpContext.Session.GetInt32("UserId"));
-            string email=HttpContext.Session.GetString("UserEmail");
+            //int Id = Convert.ToInt32(HttpContext.Session.GetInt32("UserId"));
+            //string email=HttpContext.Session.GetString("UserEmail");
             return Ok(user);
         }
         //C:\Users\rajas\source\repos\FundooNew2\FundooNew2\FundooNew2.csproj
@@ -74,9 +74,9 @@ namespace FundooNew2.Controllers
         {
 
             bool flag = business.Insert(model);
-            if (flag) return Ok();
+            if (flag) return Ok(new {result=true, message="Registered"});
 
-            return BadRequest();
+            return BadRequest(new { result = false, message = "Register Unsuccessful" });
         }
 
         [HttpPut()]
@@ -134,9 +134,9 @@ namespace FundooNew2.Controllers
 
 
             string result = password.ResetPasswordMethod(resetPassword);
-            if (result.Equals("NotFound")) return NotFound("User Not Found, Give Correct Email");
-            else if (result.Equals("PasswordNotEqual")) return BadRequest("PassWords Not Matched");
-            else return Ok("Password Changed Successfully");
+            if (result.Equals("NotFound")) return NotFound(new {message= "User Not Found, Give Correct Email" , result=false});
+            else if (result.Equals("PasswordNotEqual")) return BadRequest(new { message = "Password not matched", result = false });
+            else return Ok(new { message = "Password Changed successfully", result = true });
         }
 
         [AllowAnonymous]
@@ -152,14 +152,18 @@ namespace FundooNew2.Controllers
             tokenEmailClass = login.LoginMethod(model);
             if (tokenEmailClass == null)
             {
-                return NotFound();
+                responce= NotFound(new {result = false, message="Not found"});
+            }
+            else
+            {
+                responce = Ok(new { user = tokenEmailClass, result = true, message = "User Found" });
             }
 
             HttpContext.Session.SetInt32("UserId", tokenEmailClass.Id);
             HttpContext.Session.SetString("UserEmail", tokenEmailClass.Email);
 
-            responce = Ok(new { token = tokenEmailClass.Token });
-
+            //responce = Ok(new { token = tokenEmailClass.Token });
+            
             return responce;
         }
 

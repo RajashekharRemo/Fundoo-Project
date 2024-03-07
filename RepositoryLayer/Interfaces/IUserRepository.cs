@@ -1,4 +1,5 @@
 ﻿using Model;
+using RepositoryLayer.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,8 @@ namespace RepositoryLayer.Interfaces
 {
     public interface IUserRepository
     {
-        public IEnumerable<UserModel> GetAll();
-        public UserModel GetUser(string FirstNAme);
+        public IEnumerable<User> GetAll();
+        public User GetUser(string FirstNAme);
         public UserUpdateModel GetUserByEmail(string Email);
         public bool Insert(UserModel model);
         public bool Update(string FirstName, UserUpdateModel model);

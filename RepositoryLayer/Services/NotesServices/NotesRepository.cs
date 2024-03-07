@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.Internal;
+﻿
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using Model.NotesModel;
@@ -11,6 +11,8 @@ using RepositoryLayer.Entity;
 using RepositoryLayer.Interfaces.NotesInterface;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
+using Microsoft.Data.SqlClient;
+using MassTransit.Testing;
 
 namespace RepositoryLayer.Services.NotesServices
 {
@@ -51,40 +53,89 @@ namespace RepositoryLayer.Services.NotesServices
             }
         }
 
-        public IEnumerable<NotesModelClass> GetAll()
+        public IEnumerable<GetNotesDataClass> GetAll()
         {
             var All = _context.Notes.ToList();
             if (All == null) { return null; }
-            List<NotesModelClass> list = new List<NotesModelClass>();
-            NotesModelClass nmc = new NotesModelClass();
+            List<GetNotesDataClass> list = new List<GetNotesDataClass>();
+            GetNotesDataClass nmc = new GetNotesDataClass();
 
             foreach (var item in All)
             {
-                nmc.Title= item.Title; nmc.Description= item.Description;
-                nmc.Color= item.Color; nmc.Reminder= item.Reminder;
-                nmc.IsPinned= item.IsPinned; nmc.IsArchive= item.IsArchive;
-                nmc.IsTrash= item.IsTrash;nmc.UserId = (int)item.UserId;
-                var ImageResult=_context.Images.FirstOrDefault(s=>s.Id==item.Id);
-                nmc.Files = AddFileToFormFileMethod(ImageResult.ImageUrl);
+                nmc.Id = item.Id.ToString();
+                nmc.Title = item.Title; nmc.Description = item.Description;
+                nmc.Color = item.Color; nmc.Reminder = item.Reminder;
+                nmc.IsPinned = item.IsPinned; nmc.IsArchive = item.IsArchive;
+                nmc.IsTrash = item.IsTrash;
+                nmc.UserId = item.UserId.ToString();
+                var ImageResult = _context.Images.FirstOrDefault(s => s.Id == item.Id);
+                nmc.Files = ImageResult.ImageUrl;
+
+
                 list.Add(nmc);
             }
-            /*
-            foreach(var note in All)
-            {
-                nmc= new NotesModelClass();
-                nmc.Title = note.Title;nmc.Description = note.Description;nmc.Color = note.Color;
-                nmc.Files = AddFile.AddFileToFormFileMethod(note.Files); nmc.Reminder = note.Reminder;
-                nmc.IsArchive= note.IsArchive;nmc.IsPinned= note.IsPinned;nmc.IsTrash= note.IsTrash;
 
-                list.Add(nmc);
-            }*/
             return list;
+
+            //_context.Notes.ToList();
+
+            //string path = "Data Source=LAPTOP-MUFM59UB\\SQLEXPRESS;Initial Catalog=mydatabase;Integrated Security=True; Encrypt=False";
+            //using(SqlConnection con=new SqlConnection(path))
+            //{
+            //    con.Open();
+            //    SqlCommand cmd = new SqlCommand("select * from Notes", con);
+            //    SqlDataReader reader = cmd.ExecuteReader();
+            //    while (reader.Read())
+            //    {
+            //        gnd.Id = reader[0].ToString();
+            //        gnd.Title= reader[1].ToString();
+            //        gnd.Description= reader[2].ToString();
+            //        gnd.Color= reader[3].ToString();
+            //        gnd.Reminder = Convert.ToDateTime(reader[4].ToString());
+            //        gnd.IsArchive = reader[5].ToString();
+            //        gnd.IsPinned= reader[6].ToString();
+            //        gnd.IsTrash= reader[7].ToString();
+            //        gnd.UserId= reader[10].ToString();
+            //        var ImageResult = _context.Images.FirstOrDefault(s => s.Id == Convert.ToInt32(reader[0].ToString()));
+            //        gnd.Files = ImageResult.ImageUrl;
+            //        list.Add(gnd);
+            //    }
+            //}
+            //return list;
+
         }
 
-        public bool Create(NotesModelClass notesModelClass, int userId)
+
+        //public IEnumerable<GetNotesDataClass> GetNotesByUserId(int id)
+        //{
+        //    var All = _context.Notes.Where(x=>x.UserId==id);
+        //    if (All == null) { return null; }
+        //    List<GetNotesDataClass> list = new List<GetNotesDataClass>();
+        //    GetNotesDataClass nmc = new GetNotesDataClass();
+
+        //    foreach (var item in All)
+        //    {
+        //        nmc.Id = item.Id.ToString();
+        //        nmc.Title = item.Title; nmc.Description = item.Description;
+        //        nmc.Color = item.Color; nmc.Reminder = item.Reminder;
+        //        nmc.IsPinned = item.IsPinned; nmc.IsArchive = item.IsArchive;
+        //        nmc.IsTrash = item.IsTrash;
+        //        nmc.UserId = item.UserId.ToString();
+        //        var ImageResult = _context.Images.FirstOrDefault(s => s.Id == item.Id);
+        //        nmc.Files = ImageResult.ImageUrl;
+
+
+        //        list.Add(nmc);
+        //    }
+
+        //    return list;
+        //}
+
+
+        public bool Create(NotesModelClass notesModelClass,int  UserId)
         {
             IEnumerable<TImage> imageList = null;
-            User user = _userContext.OnlineUser2.FirstOrDefault(s => s.Id == userId);
+            User user = _userContext.OnlineUser2.FirstOrDefault(s => s.Id == UserId);
             if (user != null)
             {
                 Notes notes = new Notes();
@@ -93,14 +144,14 @@ namespace RepositoryLayer.Services.NotesServices
                 notes.Reminder = notesModelClass.Reminder; notes.IsArchive = notesModelClass.IsArchive;
                 notes.IsPinned = notesModelClass.IsPinned; notes.IsTrash = notesModelClass.IsTrash;
                 notes.CreatedAt = DateTime.Now; notes.ModifiedAt = DateTime.Now;
-                notes.UserId = notesModelClass.UserId;
+                notes.UserId = UserId;
 
                 _context.Notes.Add(notes);
                 _context.SaveChanges();
-                if(notesModelClass.Files != null)
-                {
-                    imageList=AddImageToDb(notes.Id, userId, notesModelClass.Files);
-                }
+                //if(notesModelClass.Files != null)
+                //{
+                //    imageList=AddImageToDb(notes.Id, notesModelClass.UserId, notesModelClass.Files);
+                //}
             }
             else { return false; }
 
@@ -114,6 +165,27 @@ namespace RepositoryLayer.Services.NotesServices
             return true;
         }
 
+        public bool CreateAngularNotes(AngularSupportsNotes asn)
+        {
+
+            User user = _userContext.OnlineUser2.FirstOrDefault(s => s.Id == asn.UserId);
+            if (user != null)
+            {
+                Notes notes = new Notes();
+                notes.Title = asn.Title; notes.Description = asn.Description;
+                notes.Color = asn.Color;
+                notes.Reminder = asn.Reminder; notes.IsArchive = asn.IsArchive;
+                notes.IsPinned = asn.IsPinned; notes.IsTrash = asn.IsTrash;
+                notes.CreatedAt = DateTime.Now; notes.ModifiedAt = DateTime.Now;
+                notes.UserId = asn.UserId;
+
+                _context.Notes.Add(notes);
+                _context.SaveChanges();
+                
+            }
+            else { return false; }
+            return true;
+        }
 
         public IEnumerable<TImage> AddImageToDb(int noteId, int UserId, ICollection<IFormFile> files)
         {
@@ -163,20 +235,20 @@ namespace RepositoryLayer.Services.NotesServices
         {
             var user = _userContext.OnlineUser2.FirstOrDefault(s => s.First_Name == FirstName);
             var notes = _context.Notes.FirstOrDefault(s => s.UserId == user.Id);
-            var image = _context.Images.FirstOrDefault(s => s.NoteId == notes.Id);
+           // var image = _context.Images.FirstOrDefault(s => s.NoteId == notes.Id);
 
-            if (user==null || image == null || notes == null) { return false; }
-             notes.Title=notesModel.Title; notes.Description=notesModel.Description;
+            if (user==null  || notes == null) { return false; }//|| image == null
+            notes.Title=notesModel.Title; notes.Description=notesModel.Description;
              notes.ModifiedAt=DateTime.Now;notes.Color=notesModel.Color;
             notes.IsArchive=notesModel.IsArchive; notes.IsPinned=notesModel.IsPinned;
             notes.IsTrash=notesModel.IsTrash;
-            foreach(var file in notesModel.Files)
-            {
-                image.ImageName = file.Name;
-                image.ImageUrl = ConvertImage(file).ToString();
-            }
+            //foreach(var file in notesModel.Files)
+            //{
+            //    image.ImageName = file.Name;
+            //    image.ImageUrl = ConvertImage(file).ToString();
+            //}
             _context.Entry(notes).State=EntityState.Modified;
-            _context.Entry(image).State=EntityState.Modified;
+            //_context.Entry(image).State=EntityState.Modified;
             _context.SaveChanges();
             return true;
 
@@ -190,6 +262,16 @@ namespace RepositoryLayer.Services.NotesServices
             NotesModelClass notesModel=new NotesModelClass();
             _context.Notes.Remove(notes);
             _context.Images.Remove(image);
+            _context.SaveChanges();
+            return true;
+        }
+
+        public bool deleteById(int Id)
+        {
+            var notes = _context.Notes.FirstOrDefault(s => s.Id == Id);
+            if ( notes == null) { return false; }
+            NotesModelClass notesModel = new NotesModelClass();
+            _context.Notes.Remove(notes);
             _context.SaveChanges();
             return true;
         }
@@ -249,7 +331,7 @@ namespace RepositoryLayer.Services.NotesServices
                 getNotesDataClass.Description = note.Description;
                 getNotesDataClass.Reminder = note.Reminder;
                 getNotesDataClass.IsPinned = note.IsPinned;
-                getNotesDataClass.UserId = (int)note.UserId;
+                getNotesDataClass.UserId = note.UserId.ToString();
                 getNotesDataClass.Files = image.ImageUrl;
                 getNotesDataClass.Color = note.Color;
                 getNotesDataClass.IsArchive = note.IsArchive;
@@ -303,15 +385,6 @@ namespace RepositoryLayer.Services.NotesServices
                 {
                     note.IsArchive = false;
 
-                    if (note.IsPinned == true)
-                    {
-                        note.IsPinned = false;
-                    }
-                    if (note.IsTrash == true)
-                    {
-                        note.IsTrash = false;
-                    }
-                    note.ModifiedAt = DateTime.Now;
                     _context.Entry(note).State = EntityState.Modified;
                     _context.SaveChanges();
                     return note;
@@ -319,15 +392,6 @@ namespace RepositoryLayer.Services.NotesServices
                 else
                 {
                     note.IsArchive = true;
-                    if (note.IsPinned == true)
-                    {
-                        note.IsPinned = false;
-                    }
-                    if (note.IsTrash == true)
-                    {
-                        note.IsTrash = false;
-                    }
-                    note.ModifiedAt = DateTime.Now;
                     _context.Entry(note).State = EntityState.Modified;
                     _context.SaveChanges();
                     return note;
@@ -335,6 +399,36 @@ namespace RepositoryLayer.Services.NotesServices
             }
 
         }
+
+
+        public Notes ToggleTrash(int userId, int noteId)
+        {
+            var note = _context.Notes.Where(x => x.UserId == userId && x.Id == noteId).FirstOrDefault();
+            if (note == null)
+            {
+                return null;
+            }
+            else
+            {
+                if (note.IsTrash == true)
+                {
+                    note.IsTrash = false;
+
+                    _context.Entry(note).State = EntityState.Modified;
+                    _context.SaveChanges();
+                    return note;
+                }
+                else
+                {
+                    note.IsTrash = true;
+                    _context.Entry(note).State = EntityState.Modified;
+                    _context.SaveChanges();
+                    return note;
+                }
+            }
+
+        }
+
 
 
         public Notes TogglePin(int userId, int noteId)

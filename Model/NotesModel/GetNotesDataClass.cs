@@ -12,26 +12,19 @@ namespace Model.NotesModel
 {
     public class GetNotesDataClass
     {
+             public string? Id { get; set; }
         
-            [Required]
             public string? Title { get; set; }
-            [Required]
             public string? Description { get; set; }
-            [Required]
             public string? Color { get; set; }
             //public ICollection<IFormFile>? Files { get; set; }
-            [Required]
-            public string Files { get; set; }
+            public string? Files { get; set; }
             //[DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-            [DefaultValue("2024-05-12 12:12:55.5343")]
             public DateTime Reminder { get; set; }
-            [Required]
             public bool IsArchive { get; set; }
             public bool IsPinned { get; set; }
-            [Required]
             public bool IsTrash { get; set; }
-            [JsonIgnore]
-            public int UserId { get; set; }
+            public string? UserId { get; set; }
         
     }
 }

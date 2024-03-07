@@ -21,29 +21,18 @@ namespace RepositoryLayer.Services
 
         User user = new User();
 
-        public IEnumerable<UserModel> GetAll()
+        public IEnumerable<User> GetAll()
         {
             var result = _context.OnlineUser2.ToList();
-            List<UserModel> list = new List<UserModel>();
-            foreach (var user in result)
-            {
-                UserModel userModel = new UserModel();
-                userModel.First_Name = user.First_Name; userModel.Last_Name = user.Last_Name;
-                userModel.Email = user.Email; userModel.Password = user.Password;
-                list.Add(userModel);
-            }
-            return list;
+            return result;
         }
 
-        public UserModel GetUser(string FirstNAme)
+        public User GetUser(string FirstNAme)
         {
             var result = _context.OnlineUser2.FirstOrDefault(x => x.First_Name == FirstNAme);
             if (result == null) return null;
 
-            UserModel userModel = new UserModel();
-            userModel.First_Name = result.First_Name; userModel.Last_Name = result.Last_Name; userModel.Email = result.Email;
-            userModel.Password = PasswordConversion.DecryptPassword(result.Password);
-            return userModel;
+            else return result;
         }
 
         public UserUpdateModel GetUserByEmail(string Email)

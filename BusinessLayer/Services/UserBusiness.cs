@@ -1,5 +1,6 @@
 ﻿using BusinessLayer.Interfaces;
 using Model;
+using RepositoryLayer.Entity;
 using RepositoryLayer.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -18,12 +19,12 @@ namespace BusinessLayer.Services
         }
 
 
-        public IEnumerable<UserModel> GetAll()
+        public IEnumerable<User> GetAll()
         {
             return repository.GetAll();
         }
 
-        public UserModel GetUser(string FirstNAme)
+        public User GetUser(string FirstNAme)
         {
             return repository.GetUser(FirstNAme);
         }

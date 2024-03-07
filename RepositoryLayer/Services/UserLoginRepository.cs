@@ -41,6 +41,8 @@ namespace RepositoryLayer.Services
                 tokenEmailClass.Id=user.Id;
                 tokenEmailClass.Email = user.Email;
                 tokenEmailClass.Token= GenerateToken(user.Id, user);
+                tokenEmailClass.First_name = user.First_Name;
+                tokenEmailClass.Last_Name = user.Last_Name;
                 return tokenEmailClass;
             }
             else return null;
